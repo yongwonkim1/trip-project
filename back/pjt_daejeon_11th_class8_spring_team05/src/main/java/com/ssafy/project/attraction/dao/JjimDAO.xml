@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.project.attraction.dao.JjimDAO">
+
+	<insert id="insertJjim" parameterType="map"
+		useGeneratedKeys="true">
+		INSERT INTO jjim (aid, user_id,
+		gugun_code, sido_code)
+		SELECT
+		ai.content_id,
+		#{userId},
+		ai.gugun_code,
+		ai.sido_code
+		FROM attraction_info ai
+		WHERE ai.content_id = #{aid};
+	</insert>
+
+	<!-- 사용자의 찜 목록 조회 -->
+	<select id="selectJjimList" parameterType="String"
+		resultType="map">
+		SELECT jj.*, si.sido_name, gu.gugun_name, ai.*,
+		(SELECT COALESCE(AVG(r.rating), 0) AS rating from review r where ai.content_id = r.aid )AS rating, ad.overview
+		FROM jjim jj
+		JOIN
+		sido si ON jj.sido_code = si.sido_code
+		JOIN gugun gu ON jj.gugun_code =
+		gu.gugun_code AND jj.sido_code =
+		gu.sido_code
+		JOIN attraction_info ai ON jj.aid = ai.content_id
+		JOIN attraction_description ad ON ad.content_id = ai.content_id
+		WHERE jj.user_id =
+		#{userId}
+	</select>
+
+	<delete id="deleteJjim">
+		DELETE FROM jjim
+		WHERE aid = #{aid} and user_id =
+		#{uid}
+	</delete>
+
+	<!-- 찜 불러오기 (컨텐츠 선택ver) -->
+	<select id="selectJjimByContent" resultType="map">
+		SELECT jj.*, ai.*, si.sido_name, gu.gugun_name, 
+		(SELECT COALESCE(AVG(r.rating), 0) AS rating from review r where ai.content_id = r.aid )AS rating
+		FROM jjim jj
+		JOIN
+		attraction_info ai ON jj.aid = ai.content_id
+		JOIN sido si ON
+		jj.sido_code = si.sido_code
+		JOIN gugun gu ON jj.gugun_code =
+		gu.gugun_code AND jj.sido_code =
+		gu.sido_code
+		WHERE jj.user_id = #{id}
+		AND si.sido_code = #{region}
+		AND ai.content_type_id IN
+		<foreach item="typeNumber" collection="typeNumbers" open="("
+			separator="," close=")">
+			#{typeNumber}
+		</foreach>
+	</select>
+
+	<!-- 찜 불러오기 -->
+	<select id="selectJjim" resultType="map">
+		SELECT jj.*, ai.*, si.sido_name, gu.gugun_name, 
+       (SELECT COALESCE(AVG(r.rating), 0) 
+        FROM review r 
+        WHERE ai.content_id = r.aid) AS rating
+		FROM jjim jj
+		JOIN
+		attraction_info ai ON
+		jj.aid = ai.content_id
+		JOIN sido si ON
+		jj.sido_code = si.sido_code
+		JOIN
+		gugun gu ON jj.gugun_code =
+		gu.gugun_code AND jj.sido_code =
+		gu.sido_code
+		WHERE jj.user_id = #{id}
+		AND si.sido_code = #{region}
+	</select>
+	
+	<select id="isJjim">
+		select count(*)
+		from jjim
+		where aid = #{aid} and user_id = #{uid}
+	</select>
+
+	<resultMap id="JjimResultMap" type="JjimDTO">
+		<id property="jid" column="jid" />
+		<result property="aid" column="aid" />
+		<result property="userId" column="user_id" />
+		<result property="sidoCode" column="sido_code" />
+		<result property="gugunCode" column="gugun_code" />
+		<result property="sidoName" column="sido_name" />
+		<result property="gugunName" column="gugun_name" />
+	</resultMap>
+</mapper>

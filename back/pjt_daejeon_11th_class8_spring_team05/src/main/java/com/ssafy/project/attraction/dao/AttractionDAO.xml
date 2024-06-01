@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="com.ssafy.project.attraction.dao.AttractionDAO">
+	<select id="selectAttractionInfo" parameterType="map" resultType="map">
+	    SELECT DISTINCT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+	    FROM
+	        attraction_info ai
+	    JOIN
+	        sido si ON ai.sido_code = si.sido_code
+	    JOIN
+	        gugun gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+	    JOIN
+	        attraction_description ad ON ai.content_id = ad.content_id
+		LEFT JOIN
+	        review r ON ai.content_id = r.aid 
+		WHERE
+        	ai.sido_code = #{region}
+        	AND (ai.addr1 LIKE CONCAT('%', #{keyword}, '%') OR ai.title LIKE CONCAT('%', #{keyword}, '%'))
+        	AND ai.content_type_id IN
+        <foreach item="typeNumber" collection="typeNumbers" open="(" separator="," close=")">
+            #{typeNumber}
+        </foreach>
+    	GROUP BY
+        	ai.content_id, ad.overview, ai.content_type_id, ai.title, ai.first_image, si.sido_name, gu.gugun_name, ai.latitude, ai.longitude
+		LIMIT 100
+		</select>
+
+    
+	
+	<!-- 지역,키워드로 검색 -->
+	<select id="selectAttractionInfoByKeyword" parameterType="map" resultType="map">
+	    SELECT DISTINCT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+	    FROM
+	        attraction_info ai
+	    JOIN
+	        sido si ON ai.sido_code = si.sido_code
+	    JOIN
+	        gugun gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+		JOIN
+	        attraction_description ad ON ai.content_id = ad.content_id
+	    LEFT JOIN
+	        review r ON ai.content_id = r.aid 
+		 WHERE
+	        ai.sido_code = #{region}
+	        AND (ai.addr1 LIKE CONCAT('%', #{keyword}, '%') OR ai.title LIKE CONCAT('%', #{keyword}, '%'))
+		GROUP BY
+	        ai.content_id, ad.overview, ai.content_type_id, ai.title, ai.first_image, si.sido_name, gu.gugun_name, ai.latitude, ai.longitude
+		LIMIT 100
+	</select>
+		
+	<select id="selectMTTIAttractionInfo" resultType="map">
+		SELECT DISTINCT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+		FROM
+		    attraction_info ai
+		JOIN
+		    sido si ON ai.sido_code = si.sido_code
+		JOIN
+		    gugun gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+		LEFT JOIN
+	        attraction_description ad ON ai.content_id = ad.content_id
+		LEFT JOIN
+		    review r ON ai.content_id = r.aid
+		JOIN
+		    mtti_content_type mct ON FIND_IN_SET(ai.content_type_id, mct.content_type_ids)
+		WHERE
+		    mct.mtti_type = #{mtti} AND ai.sido_code = #{region}
+		GROUP BY
+		    ai.content_id, ad.overview, ai.content_type_id, ai.sido_code, ai.title, ai.addr1, ai.addr2, ai.first_image, ai.latitude, ai.longitude, si.sido_name, gu.gugun_name
+		ORDER BY RAND()
+        LIMIT 100;
+	</select>
+	
+	<select id="recommendAttractionNoMTTI" resultType="map">
+		SELECT DISTINCT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+		FROM
+		    attraction_info ai
+		JOIN
+		    sido si ON ai.sido_code = si.sido_code
+		LEFT JOIN
+		    attraction_description ad ON ad.content_id = ai.content_id
+		JOIN
+		    gugun gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+		LEFT JOIN
+		    review r ON ai.content_id = r.aid
+		JOIN
+		    mtti_content_type mct ON FIND_IN_SET(ai.content_type_id, mct.content_type_ids)
+		GROUP BY
+		    ai.content_id, ad.overview, ai.content_type_id, ai.sido_code, ai.title, ai.addr1, ai.addr2, ai.first_image, ai.latitude, ai.longitude, si.sido_name, gu.gugun_name
+		ORDER BY RAND()
+        LIMIT 12;
+	</select>
+	
+	<!-- 관광지 상세페이지 -->
+	<select id="selectAttractionDetail" resultType="map">
+		SELECT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+		FROM
+		attraction_info ai
+		JOIN
+		sido si ON ai.sido_code = si.sido_code
+		JOIN
+		gugun
+		gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+		LEFT JOIN
+		attraction_description ad ON ai.content_id = ad.content_id
+		LEFT JOIN
+		review r ON ai.content_id = r.aid
+		WHERE
+		ai.content_id =
+		#{attractionId}
+		GROUP BY
+		ai.content_id, ad.overview, ai.content_type_id,
+		ai.title, ai.first_image,
+		si.sido_name, gu.gugun_name, ai.latitude,
+		ai.longitude
+	</select>
+
+	<!-- 특정 관광지와 해당하는 리뷰 조회 -->
+	<select id="selectReviewByAttractionId" parameterType="int"
+		resultType="map">
+		SELECT *, ai.first_image, u.nickname
+		FROM review r
+		LEFT JOIN
+		user u ON u.user_id = r.user_id
+		LEFT JOIN
+		attraction_info ai ON
+		ai.content_id = r.aid
+		WHERE r.aid = #{attractionId}
+	</select>
+
+	<select id="recommendAttraction" parameterType="map" resultType="map">
+		SELECT DISTINCT
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating
+		FROM
+		    attraction_info ai
+		JOIN
+		    sido si ON ai.sido_code = si.sido_code
+		JOIN
+		    gugun gu ON ai.gugun_code = gu.gugun_code AND ai.sido_code = gu.sido_code
+		LEFT JOIN
+		    review r ON ai.content_id = r.aid
+		LEFT JOIN
+		attraction_description ad ON ai.content_id = ad.content_id
+		JOIN
+		    mtti_content_type mct ON FIND_IN_SET(ai.content_type_id, mct.content_type_ids)
+		WHERE
+		    mct.mtti_type = #{mtti}
+		GROUP BY
+		    ai.content_id, ad.overview, ai.content_type_id, ai.sido_code, ai.title, ai.addr1, ai.addr2, ai.first_image, ai.latitude, ai.longitude, si.sido_name, gu.gugun_name
+		ORDER BY 
+		    CASE 
+		        WHEN mct.mtti_type LIKE '%F%' AND ai.sido_code = #{userSidoCode} THEN 1 
+		        WHEN mct.mtti_type LIKE '%S%' AND ai.sido_code != #{userSidoCode} THEN 1
+		        ELSE 2
+		    END, RAND()
+		LIMIT 12;
+
+	</select>
+	
+	<select id="selectByReview" resultType="map">
+		SELECT distinct
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COALESCE(AVG(r.rating), 0) AS rating,
+		    COUNT(r.rid) AS review_count
+		FROM 
+		    attraction_info ai
+		JOIN 
+		    attraction_description ad ON ai.content_id = ad.content_id
+		JOIN 
+		    sido si ON ai.sido_code = si.sido_code
+		JOIN 
+		    gugun gu ON ai.gugun_code = gu.gugun_code and gu.sido_code=si.sido_code
+		LEFT JOIN 
+		    review r ON ai.content_id = r.aid
+		GROUP BY 
+		    ai.content_id, ai.content_type_id, ad.overview, ai.sido_code, ai.title, ai.addr1, ai.addr2, ai.first_image, ai.latitude, ai.longitude, si.sido_name, gu.gugun_name
+		ORDER BY 
+		    review_count DESC, rating DESC, RAND()
+		LIMIT 12;
+
+	</select>
+	
+	<select id="selectByJJIM" resultType="map">
+		SELECT 
+		    ai.content_id,
+		    ai.content_type_id,
+		    ad.overview,
+		    ai.sido_code,
+		    ai.title,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.first_image,
+		    ai.latitude,
+		    ai.longitude,
+		    si.sido_name,
+		    gu.gugun_name,
+		    COUNT(j.jid) AS jjim_count
+		FROM 
+		    attraction_info ai
+		JOIN 
+		    attraction_description ad ON ai.content_id = ad.content_id
+		JOIN 
+		    sido si ON ai.sido_code = si.sido_code
+		JOIN 
+		    gugun gu ON ai.gugun_code = gu.gugun_code and gu.sido_code = si.sido_code
+		LEFT JOIN 
+		    jjim j ON ai.content_id = j.aid
+		GROUP BY 
+		    ai.content_id, ai.content_type_id, ad.overview, ai.sido_code, ai.title, ai.addr1, ai.addr2, ai.first_image, ai.latitude, ai.longitude, si.sido_name, gu.gugun_name
+		ORDER BY 
+		    jjim_count DESC, RAND()
+		LIMIT 12;
+
+	</select>
+
+</mapper>

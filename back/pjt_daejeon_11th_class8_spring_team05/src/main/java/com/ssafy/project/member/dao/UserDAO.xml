@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.project.member.dao.UserDAO">
+
+	<resultMap type="UserDTO" id="user">
+		<result column="user_id" property="userId"/>
+		<result column="user_pw" property="userPw"/>
+		<result column="user_name" property="userName"/>
+		<result column="nickname" property="nickname"/>
+		<result column="profile_img" property="profileImg"/>
+		<result column="gender" property="gender"/>
+		<result column="birth" property="birth"/>
+		<result column="sido_code" property="sido_code"/>
+		<result column="mtti" property="mtti"/>
+		<result column="refreshToken" property="refreshToken"/>
+	</resultMap>
+	<!-- 아이디 중복 확인 -->
+	<select id="checkDuplicateId" parameterType="string" resultType="int">
+		select count(*)
+		from ssafytrip.user
+		where user_id = #{userId}
+	</select>
+
+	<!-- 회원가입 -->
+	<insert id="insertUser" parameterType="UserDTO">
+		insert into ssafytrip.user (user_id, user_pw, user_name, nickname, profile_img, gender, birth, sido_code)
+		values (#{userId}, #{userPw}, #{userName}, #{nickname}, #{profileImg}, #{gender}, #{birth}, #{sido_code})
+	</insert>
+
+	<select id="login" parameterType="map" resultMap="user">
+		select user_id, user_name, refreshToken
+		from ssafytrip.user
+		where user_id = #{userId} and user_pw = #{userPw}
+	</select>
+	
+	<select id="userInfo" parameterType="string" resultMap="user">
+		select  *
+		from ssafytrip.user
+		where user_id = #{userId}
+	</select>
+	
+	<update id="saveRefreshToken" parameterType="map">
+		update ssafytrip.user
+		set refreshToken = #{refreshToken}
+		where user_id = #{userId}
+	</update>
+	
+	<select id="getRefreshToken" parameterType="string" resultType="string">
+		select refreshToken
+		from ssafytrip.user
+		where user_id = #{userId}
+	</select>
+	
+	<update id="deleteRefreshToken" parameterType="map">
+		update ssafytrip.user
+		set refreshToken = #{refreshToken, jdbcType=VARCHAR}
+		where user_id = #{userId}
+	</update>
+	
+	<select id="selectNicknameImgById">
+		SELECT nickname
+		FROM ssafytrip.user
+		where user_id=#{id};
+	</select>
+	<select id="selectImgImgById">
+		SELECT profile_img
+		FROM ssafytrip.user
+		where user_id=#{id};
+	</select>
+	
+	<update id="updateInfo">
+		update ssafytrip.user
+		set user_pw = #{userPw},user_name = #{userName},nickname = #{nickname},profile_img = #{profileImg},gender = #{gender},birth = #{birth},sido_code = #{sido_code}
+		where user_id = #{userId}
+	</update>
+	
+	<update id="updateMtti">
+		update ssafytrip.user
+		set mtti = #{mtti}
+		where user_id = #{userId}
+	</update>
+</mapper>

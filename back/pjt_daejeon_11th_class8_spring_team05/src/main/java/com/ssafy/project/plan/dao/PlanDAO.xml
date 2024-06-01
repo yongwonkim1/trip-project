@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.project.plan.dao.PlanDAO">
+	<!-- 여행 계획 추가 -->
+	<insert id="insertPlan" parameterType="PlanDTO"
+		useGeneratedKeys="true" keyProperty="pid">
+		INSERT INTO plan (user_id, title,
+		style, image, startDate, Duration)
+		VALUES (#{user_id}, #{title},
+		#{style}, #{image}, #{startDate}, #{duration})
+	</insert>
+	
+	<!-- 여행 계획 삭제 -->
+	<delete id="deletePlan" parameterType="map">
+		DELETE FROM plan
+		WHERE pid = #{pid} AND user_id = #{userId}
+	</delete>
+	
+	<!-- 여행 계획 조회 -->
+	<select id="selectOnePlan" parameterType="int"
+		resultType="PlanDTO">
+		SELECT *, 
+		FROM plan 
+		WHERE pid = #{pid}
+	</select>
+	
+	<!-- ID로 여행 계획 조회 -->
+	<select id="selectUserPlan" resultType="map">
+		SELECT p.*, u.nickname, u.profile_img
+		FROM plan p
+		JOIN 
+		    user u ON u.user_id = p.user_id
+		WHERE p. user_id = #{id}
+	</select>
+	
+	<!-- 세부 계획 추가 -->
+	<insert id="insertDetailPlan" parameterType="DetailPlanDTO"
+		useGeneratedKeys="true" keyProperty="dpid">
+		INSERT INTO detailplan (pid, userId, aid, day, porder)
+		VALUES (#{pid}, #{userId}, #{aid}, #{day}, #{porder})
+	</insert>
+	
+	<delete id="deleteDetailPlan">
+		DELETE FROM detailplan
+        WHERE pid = #{pid} AND day = #{day}
+	</delete>
+	
+	<!-- 세부 계획 조회 -->
+	<select id="selectOneDayPlan" resultType="map">
+		SELECT 
+		    dp.aid,
+		    ai.addr1,
+		    ai.addr2,
+		    ai.content_type_id,
+		    ai.first_image,
+		    ai.gugun_code,
+		    ad.overview,
+		    g.gugun_name,
+		    ai.latitude,
+		    ai.longitude,
+		    ai.mlevel,
+		    ai.sido_code,
+		    s.sido_name,
+		    ai.tel,
+		    ai.title,
+		    dp.userId AS user_id,
+		    ai.zipcode,
+		    ai.readcount,
+		    COALESCE(AVG(r.rating), 0) AS rating
+		FROM 
+		    detailplan dp
+		JOIN 
+		    attraction_info ai ON dp.aid = ai.content_id
+		JOIN 
+		    gugun g ON ai.gugun_code = g.gugun_code AND ai.sido_code = g.sido_code
+		JOIN 
+		    sido s ON ai.sido_code = s.sido_code
+		JOIN
+	        attraction_description ad ON ai.content_id = ad.content_id
+		LEFT JOIN 
+		    review r ON dp.aid = r.aid
+		WHERE 
+		    dp.pid = #{pid} AND dp.day = #{day}
+		GROUP BY 
+		    dp.aid, ai.addr1, ai.addr2, ai.content_type_id, ai.first_image, ai.gugun_code, g.gugun_name, 
+		    ai.latitude, ai.longitude, ai.mlevel, ai.sido_code, s.sido_name, ai.tel, ai.title, dp.userId, ai.zipcode, ai.readcount
+		ORDER BY 
+		    dp.aid;
+	</select>
+</mapper>
